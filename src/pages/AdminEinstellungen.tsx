@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listUsers, raeumeBildspeicherAuf, type Rolle, type TeamMember } from '../lib/supabase'
+import { listUsers, raeumeBildspeicherAuf, type Rolle, type TeamMember } from '../lib/daten'
 import { toGermanError } from '../lib/errors'
 import { HeimVorlagen } from '../components/HeimVorlagen'
 

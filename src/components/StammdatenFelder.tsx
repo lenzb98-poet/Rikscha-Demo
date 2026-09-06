@@ -1,4 +1,4 @@
-import type { Rolle, Stammdaten } from '../lib/supabase'
+import type { Rolle, Stammdaten } from '../lib/daten'
 
 const ROLLEN: { wert: Rolle; text: string }[] = [
   { wert: 'fahrer', text: 'Fahrer:in' },

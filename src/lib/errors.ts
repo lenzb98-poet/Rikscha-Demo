@@ -1,6 +1,6 @@
-/** Übersetzt Supabase-Fehlermeldungen in verständliches Deutsch. */
+/** Übersetzt Fehlermeldungen der Datenschicht in verständliches Deutsch. */
 export function toGermanError(error: unknown): string {
-  // Achtung: Fehler aus supabase.rpc() sind einfache Objekte mit .message,
+  // Achtung: Fehler der Datenschicht sind teils einfache Objekte mit .message,
   // keine Error-Instanzen. Ohne diesen Zweig landet jede Datenbankmeldung
   // bei "Unbekannter Fehler".
   const message =

@@ -10,7 +10,7 @@ import {
   sendMessage,
   watchMessages,
   type ChatNachricht,
-} from '../lib/supabase'
+} from '../lib/daten'
 import { verkleinereBild, formatiereGroesse } from '../lib/bilder'
 import { chatGesehen } from '../lib/chatGelesen'
 import { toGermanError } from '../lib/errors'

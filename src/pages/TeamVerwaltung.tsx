@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { hatPasswort, listUsers, type Rolle, type TeamMember } from '../lib/supabase'
+import { hatPasswort, listUsers, type Rolle, type TeamMember } from '../lib/daten'
 import { toGermanError } from '../lib/errors'
 import { AddUserDialog } from '../components/AddUserDialog'
 import { EditUserDialog } from '../components/EditUserDialog'

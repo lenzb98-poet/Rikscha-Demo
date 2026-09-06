@@ -1,12 +1,11 @@
-import { supabase } from './supabase'
+import { aendere, daten, darfVerwalten, fehler, ich, kurzWarten, neueId } from './demoBackend'
 
 /**
  * Die Seniorenheime, zu denen regelmäßig gefahren wird - als Vorlage beim
  * Anlegen einer Fahrt.
  *
- * Die Liste liegt in der Datenbank und wird in den Admin Einstellungen
- * gepflegt. Vorher stand sie fest im Programm; eine neue Nummer hätte damit
- * eine neue Version der App gebraucht.
+ * Die Liste wird in den Admin Einstellungen gepflegt. In dieser Demo liegt
+ * sie bei den lokalen Beispieldaten.
  */
 export type Heim = {
   id: string
@@ -17,9 +16,9 @@ export type Heim = {
 
 /** Lesen dürfen alle Freigeschalteten - jede Person legt mal eine Fahrt an. */
 export async function listHeime(): Promise<Heim[]> {
-  const { data, error } = await supabase.rpc('list_heime')
-  if (error) throw error
-  return (data ?? []) as Heim[]
+  ich()
+  const liste = [...daten().heime].sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  return kurzWarten(liste)
 }
 
 /** Ohne id kommt ein Haus dazu, mit id wird das vorhandene geändert. */
@@ -29,15 +28,21 @@ export async function speichereHeim(h: {
   anschrift: string
   telefon: string
 }): Promise<Heim> {
-  const { data, error } = await supabase.rpc('heim_speichern', {
-    p_id: h.id ?? null,
-    p_name: h.name.trim(),
-    p_anschrift: h.anschrift.trim(),
-    p_telefon: h.telefon.trim(),
-  })
-  if (error) throw error
-  const row = Array.isArray(data) ? data[0] : data
-  return row as Heim
+  nurVerwaltung()
+  const name = h.name.trim()
+  if (name === '') throw fehler('Bitte einen Namen angeben.')
+
+  const werte = { name, anschrift: h.anschrift.trim(), telefon: h.telefon.trim() }
+  const db = daten()
+  const vorhanden = h.id ? db.heime.find((x) => x.id === h.id) : undefined
+
+  const heim: Heim = vorhanden
+    ? Object.assign(vorhanden, werte)
+    : { id: neueId('h'), ...werte }
+  if (!vorhanden) db.heime.push(heim)
+
+  aendere('stammdaten')
+  return kurzWarten(heim)
 }
 
 /**
@@ -45,9 +50,20 @@ export async function speichereHeim(h: {
  * Infotext stehen dort als eigener Text und hängen nicht an der Vorlage.
  */
 export async function loescheHeim(id: string): Promise<string> {
-  const { data, error } = await supabase.rpc('heim_loeschen', { p_id: id })
-  if (error) throw error
-  return data as string
+  nurVerwaltung()
+  const db = daten()
+  const heim = db.heime.find((h) => h.id === id)
+  if (!heim) throw fehler('Diese Vorlage gibt es nicht mehr.')
+  db.heime = db.heime.filter((h) => h.id !== id)
+  aendere('stammdaten')
+  return kurzWarten(heim.name)
+}
+
+/** Vorlagen pflegen darf nur die Koordination. */
+function nurVerwaltung() {
+  const mich = ich()
+  if (!darfVerwalten(mich)) throw fehler('Dafür fehlt dir die Berechtigung.')
+  return mich
 }
 
 /** Was im Feld „Wo“ steht: Name und Anschrift. */
