@@ -32,6 +32,20 @@ Zum Ausprobieren sind Zugänge hinterlegt, alle mit dem Passwort `demo1234`:
 | Bernd Kramer, Anke Meier | Fahrer:in |
 | Hilde Bergmann | Fahrer:in, noch ohne Passwort (Erstanmeldung) |
 
+## Veröffentlichen
+
+Die Seite wird über **GitHub Actions** gebaut und veröffentlicht, nicht aus
+einem Branch heraus: Ein Vite-Projekt muss erst gebaut werden, sonst läge auf
+der Seite die `index.html` mit dem unkompilierten Quelltext.
+
+- Der Workflow steht in `.github/workflows/pages.yml` und läuft bei jedem Push
+  auf `main`; von Hand starten lässt er sich in der Actions-Ansicht.
+- Unter *Settings → Pages → Source* muss **„GitHub Actions"** stehen. Bei
+  „Deploy from a branch" läuft weiterhin der alte Jekyll-Lauf.
+- `vite.config.ts` setzt `base: './'`, also relative Pfade. Damit funktioniert
+  die Seite unter `benutzername.github.io/Rikscha-Demo/` genauso wie unter
+  einer eigenen Domain – der Pfad muss nirgends eingetragen werden.
+
 ## Anmeldung
 
 Angemeldet wird sich mit dem **vollen Namen**, nicht mit einer E-Mail-Adresse.
