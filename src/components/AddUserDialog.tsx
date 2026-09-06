@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createUser, type Stammdaten, type TeamMember } from '../lib/supabase'
+import { createUser, type Stammdaten, type TeamMember } from '../lib/daten'
 import { toGermanError } from '../lib/errors'
 import { StammdatenFelder, LEERE_STAMMDATEN } from './StammdatenFelder'
 

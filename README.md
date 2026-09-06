@@ -4,35 +4,43 @@ Web-App zur Verwaltung der Rikscha-Fahrten der Aktion **Radeln ohne Alter** in
 Melle: Fahrten planen, Pilot:innen eintragen, nach der Fahrt die Zahlen
 nachtragen und auswerten.
 
-React + TypeScript + Vite, Daten in Supabase (PostgreSQL mit Row Level
-Security). Veröffentlicht über GitHub Pages.
+> **Demo-Version.** Diese Fassung läuft ohne Server: kein Backend, keine
+> Datenbank, keine Netzwerkzugriffe. Alle Inhalte sind Beispieldaten, die im
+> Browser liegen. Oberfläche und Bedienung entsprechen der Vollversion, nur die
+> Datenquelle ist eine andere.
+
+React + TypeScript + Vite. Die Daten stammen aus `src/lib/demoDaten.ts` und
+werden zur Laufzeit im Browser gehalten (`localStorage`).
 
 ## Einrichtung
 
 ```bash
 npm install
-cp .env.example .env   # VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY eintragen
 npm run dev
 ```
 
-Die Migrationen unter `supabase/migrations/` der Reihe nach im Supabase
-SQL-Editor ausführen. Unter *Authentication → Providers → Email* die
-Bestätigungsmail abschalten, damit neue Pilot:innen sich direkt anmelden können.
+Mehr ist nicht nötig: Es gibt keine Umgebungsvariablen, keine Zugangsdaten und
+keine Migrationen. Die App lässt sich auch ohne Internetverbindung starten und
+bedienen.
 
-Für die Veröffentlichung müssen unter *Settings → Secrets and variables →
-Actions* die Werte `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` hinterlegt
-sein; *Settings → Pages → Source* steht auf „GitHub Actions".
+Zum Ausprobieren sind Zugänge hinterlegt, alle mit dem Passwort `demo1234`:
+
+| Name | Rolle |
+|---|---|
+| Lenz Becker | Administration |
+| Martina Vogel | Koordination |
+| Bernd Kramer, Anke Meier | Fahrer:in |
+| Hilde Bergmann | Fahrer:in, noch ohne Passwort (Erstanmeldung) |
 
 ## Anmeldung
 
 Angemeldet wird sich mit dem **vollen Namen**, nicht mit einer E-Mail-Adresse.
 
-1. Name eingeben – die App sucht ihn in `app_users` (`check_login_name`).
-2. **Erste Anmeldung:** Die Person legt selbst ein Passwort fest, danach wird
-   das Auth-Konto mit dem Eintrag verknüpft.
+1. Name eingeben – die App sucht ihn in der Benutzerliste (`checkLoginName`).
+2. **Erste Anmeldung:** Die Person legt selbst ein Passwort fest.
 3. **Weitere Anmeldungen:** normale Passwort-Anmeldung.
 
-Supabase Auth braucht intern immer eine E-Mail. Deshalb gibt es drei Spalten:
+Die Anmeldung kennt zu jeder Person drei Felder:
 
 - `full_name` – der Anmeldename, eindeutig (Groß-/Kleinschreibung egal)
 - `login_email` – technische Kennung, nie angezeigt, aus dem Namen abgeleitet
@@ -63,18 +71,16 @@ aller Pilot:innen. Wer sie ändern darf, hängt an der Rolle.
 | **Administrationsrolle vergeben und entziehen** | – | – | ja |
 | **Zugänge der Administration löschen** | – | – | ja |
 
-Gelesen wird über `list_piloten()`: Die Policy auf `app_users` zeigt
-Fahrer:innen weiterhin nur den eigenen Datensatz, direkte Abfragen bleiben also
-zu. Die Funktion entscheidet auch, wer wen sieht – Deaktivierte und der
-Passwortstand sind Verwaltungswissen und werden Fahrer:innen gar nicht erst
-geliefert.
+Gelesen wird über `listUsers()`. Die Funktion entscheidet auch, wer wen sieht –
+Deaktivierte und der Passwortstand sind Verwaltungswissen und werden
+Fahrer:innen gar nicht erst geliefert.
 
 **Koordination und Administration sind weitgehend gleichgestellt.** Beide
 dürfen Fahrten anlegen und bearbeiten, das Fahrtenbuch führen, fremde
 Chatnachrichten löschen, Personen anlegen, bearbeiten, deaktivieren, löschen
-und Passwörter zurücksetzen. Geprüft wird dafür überall `darf_verwalten()`.
+und Passwörter zurücksetzen. Geprüft wird dafür überall `darfVerwalten()`.
 
-Zwei Dinge bleiben bei der Administration, geprüft mit `is_admin()`:
+Zwei Dinge bleiben bei der Administration, geprüft über die Rolle `admin`:
 
 - **Zugänge der Administration löschen** – Löschen ist nicht rückholbar.
 - **Die Administrationsrolle vergeben *und entziehen***.
@@ -94,19 +100,13 @@ ein neues Passwort. Der Weg per E-Mail scheidet aus, weil die Login-Kennung
 meist abgeleitet ist. Der Eintrag und alle Fahrtanmeldungen bleiben erhalten.
 Das eigene Passwort lässt sich hier nicht zurücksetzen.
 
-**Löschen** entfernt den Eintrag samt Anmeldekonto in `auth.users` – nur so wird
-der Name wieder frei. Zum bloßen Sperren ist Deaktivieren die bessere Wahl.
+**Löschen** entfernt den Eintrag samt Passwort – nur so wird der Name wieder
+frei. Zum bloßen Sperren ist Deaktivieren die bessere Wahl.
 
-Die Rechteprüfung liegt in der Datenbank (`admin_create_user`,
-`admin_update_user`, `admin_delete_user`, `admin_reset_password`), nicht in der
-Oberfläche. Zusätzlich verhindert sie, dass Administratoren sich selbst
-deaktivieren, löschen oder die eigenen Rechte entziehen.
-
-Der Trigger `app_users_guard_privileges` sichert denselben Rahmen an der
-Tabelle ab, für den Fall, dass jemand die Funktionen umgeht: Rolle, Name und
-Freischaltung ändert nur, wer verwalten darf. Ohne ihn könnte sich jede
-Fahrer:in über die eigene Zeile selbst befördern – die Policy erlaubt jeder
-Person Änderungen daran.
+Die Rechteprüfung liegt in der Datenschicht (`createUser`, `updateUser`,
+`deleteUser`, `resetPassword` in `src/lib/daten.ts`), nicht nur in der
+Oberfläche. In der Vollversion übernimmt das die Datenbank; in der Demo bildet
+die Datenschicht dieselben Regeln nach.
 
 ## Fahrten
 
@@ -134,7 +134,8 @@ Datei angepasst.
 ### Rikscha-Plätze
 
 Jede Fahrt hat so viele **Plätze**, wie Rikschas gebraucht werden – je Platz ein
-Datensatz in `ride_slots`, der zunächst frei ist. Gebucht wird einzeln.
+Eintrag (`slots` in den Beispieldaten), der zunächst frei ist. Gebucht wird
+einzeln.
 
 - **Offene Fahrten** zeigt die Fahrt als *einen* Eintrag mit Zähler
   („1 von 4 Rikschas besetzt"). Der Knopf nimmt den ersten freien Platz.
@@ -260,9 +261,9 @@ Knopf **Piloten Chat** unter den Fahrten-Knöpfen.
 - Eigene Nachrichten löschbar, Administratoren auch fremde
 - Deaktivierte Zugänge können weder lesen noch schreiben
 
-Die Auswahl der Zeichen ist bewusst klein und fest (`REAKTIONEN` im Programm,
-derselbe Check an `message_reactions`): auf jedem Gerät gleich, ohne
-Fremdbibliothek, mit einem Griff bedienbar. `message_reagieren()` schaltet um –
+Die Auswahl der Zeichen ist bewusst klein und fest (`REAKTIONEN` im Programm):
+auf jedem Gerät gleich, ohne Fremdbibliothek, mit einem Griff bedienbar.
+`reagiere()` schaltet um –
 dasselbe Zeichen erneut zu wählen nimmt es zurück. Wird eine Nachricht
 gelöscht, verschwinden ihre Reaktionen mit ihr.
 
@@ -271,9 +272,8 @@ Nachricht gelöscht, fällt er still weg (`on delete set null`) und die Antwort
 bleibt als gewöhnliche Nachricht stehen – eine Kopie des Textes aufzubewahren
 wäre bequemer, würde aber das Löschen unterlaufen.
 
-Der Absender wird serverseitig aus der Anmeldung bestimmt und lässt sich nicht
-fälschen. Gelesen wird über `list_messages`, weil die Policy auf `app_users`
-Nicht-Administratoren nur den eigenen Datensatz zeigt.
+Der Absender wird aus der Anmeldung bestimmt, nicht aus der Eingabe. Gelesen
+wird über `listMessages`.
 
 ### Ungelesene Nachrichten
 
@@ -281,20 +281,19 @@ Am Chat-Knopf steht die Zahl der ungelesenen Nachrichten in einer roten Pille,
 wie am App-Symbol auf dem Handy; ab 100 als „99+“. Eigene Nachrichten zählen
 nicht mit.
 
-Der Lesestand steht **in der Datenbank** bei der Person selbst
-(`app_users.chat_gesehen_bis`) und gilt damit auf allen Geräten: Wer am Handy
-liest, sieht dieselben Nachrichten am Rechner nicht mehr als ungelesen. Ein
-Zeitstempel je Person genügt, deshalb eine Spalte statt einer eigenen Tabelle.
+Der Lesestand steht beim Benutzereintrag selbst (`chat_gesehen_bis`) und gilt
+damit überall in der Anwendung: Wer den Chat liest, sieht dieselben Nachrichten
+auf der Startseite nicht mehr als ungelesen. Ein Zeitstempel je Person genügt.
 
-- `chat_gesehen(p_bis)` – hält fest, bis wohin gelesen wurde
-- `chat_ungelesen()` – zählt, was danach von anderen kam
+- `chatGesehen(bis)` – hält fest, bis wohin gelesen wurde
+- `ungeleseneAnzahl()` – zählt, was danach von anderen kam
 
 Zwei Regeln schützen den Stand vor kaputten Uhren und mehreren Geräten:
 
-- Er wandert **nur vorwärts** (`greatest`). Sonst zöge ein zweites Gerät, das
-  noch einen älteren Verlauf anzeigt, schon Gelesenes wieder auf ungelesen.
-- Er wandert **nie in die Zukunft** (`least(…, now())`). Ein vorgehendes Gerät
-  würde sonst künftige Nachrichten im Voraus abhaken.
+- Er wandert **nur vorwärts**. Sonst zöge eine zweite Ansicht, die noch einen
+  älteren Verlauf zeigt, schon Gelesenes wieder auf ungelesen.
+- Er wandert **nie in die Zukunft**. Sonst würden künftige Nachrichten im
+  Voraus abgehakt.
 
 Beim Öffnen des Chats wird der Stand einmal gemeldet, danach nur, wenn
 tatsächlich eine neuere Nachricht dazugekommen ist – der Verlauf lädt alle
@@ -312,9 +311,9 @@ Megabyte auf unter 100 KB.
 
 Der Speicher ist auf **750 MiB** begrenzt. Wird die Grenze überschritten,
 verschwinden die **ältesten Bilder zuerst**; der Text bleibt stehen, an der
-Stelle des Bildes erscheint ein Hinweis. Aufgeräumt wird nach jedem Hochladen in
-drei Schritten – Kandidaten erfragen, Dateien löschen, Löschung melden – weil
-ein `DELETE` in der Datenbank die Datei im Speicher nicht mit entfernt.
+Stelle des Bildes erscheint ein Hinweis. Aufgeräumt wird nach jedem Hochladen.
+In der Demo liegen die Bilder als Data-URL im Browser; ist dessen Speicher voll,
+gelten sie nur für den laufenden Besuch.
 
 ## Als App auf dem Handy
 
@@ -362,9 +361,20 @@ Fehler ohne Herkunft oder aus fremden Dateien werden ignoriert – Safari meldet
 Fehler aus Erweiterungen als bloßes „Script error.". Läuft die App bereits,
 übernimmt die Diagnose nicht mehr; dann fängt die ErrorBoundary in React.
 
-## Migrationen
+## Beispieldaten
 
-Die Migrationen liegen unter `supabase/migrations/` und laufen der Reihe nach.
-Die jüngeren (ab `0016`) sind **wiederholbar**: Bricht eine im SQL-Editor ab,
-lässt sie sich erneut ausführen, ohne dass etwas doppelt verarbeitet wird. Die
-älteren bis `0015` sind nur einmal ausführbar.
+Die Demo kommt ohne Datenbank aus. Drei Dateien tragen alles:
+
+- `src/lib/demoDaten.ts` – die Beispieldaten: Pilot:innen, Fahrten, Plätze,
+  Chatverlauf, Heim-Vorlagen und die übernommene Statistik. Termine liegen
+  relativ zum heutigen Tag, damit immer etwas Kommendes und etwas
+  Nachzutragendes dabei ist.
+- `src/lib/demoBackend.ts` – hält die Daten im Browser, merkt sich Änderungen
+  im `localStorage` und meldet der Oberfläche, was sich geändert hat. Das
+  übernimmt die Rolle von Datenbank, Anmeldung und Realtime.
+- `src/lib/daten.ts` und `src/lib/demoFahrten.ts` – die Zugriffe, die die
+  Oberfläche benutzt; ihre Signaturen entsprechen denen der Vollversion.
+
+Änderungen bleiben im Browser und wirken sich auf niemanden sonst aus.
+`setzeDemoZurueck()` aus `src/lib/daten.ts` stellt den Anfangszustand wieder
+her; dasselbe erreicht man, indem man die Daten der Seite im Browser löscht.

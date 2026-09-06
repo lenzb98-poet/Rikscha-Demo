@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase, watchMessages } from './supabase'
+import {
+  chatGesehenBis,
+  setzeChatGesehenBis,
+  watchMessages,
+  zaehleUngelesen,
+} from './daten'
+import { kurzWarten } from './demoBackend'
 
 /**
  * Ungelesene Chatnachrichten.
  *
- * Der Lesestand steht in der Datenbank bei der Person selbst
- * (app_users.chat_gesehen_bis) und gilt damit auf allen Geräten: Wer am
- * Handy liest, sieht die Nachrichten am Rechner nicht mehr als ungelesen.
+ * Der Lesestand steht beim Benutzereintrag selbst und gilt damit überall in
+ * der Anwendung: Wer den Chat liest, sieht die Nachrichten auf der Startseite
+ * nicht mehr als ungelesen.
  *
- * Zeitstempel kommen ausschließlich vom Server. Die Uhr des Geräts spielt
- * keine Rolle, und die Datenbank lässt den Stand ohnehin nur vorwärts und
- * nie in die Zukunft wandern.
+ * Der Stand wandert nur vorwärts und nie in die Zukunft.
  */
 
 /**
@@ -18,16 +22,16 @@ import { supabase, watchMessages } from './supabase'
  * Aufrufs. Gibt den tatsächlich gespeicherten Stand zurück.
  */
 export async function chatGesehen(bis?: string): Promise<string> {
-  const { data, error } = await supabase.rpc('chat_gesehen', { p_bis: bis ?? null })
-  if (error) throw error
-  return data as string
+  const stand = setzeChatGesehenBis(bis ?? new Date().toISOString())
+  return kurzWarten(stand, 0)
 }
+
+/** Bis wohin gelesen wurde; null, solange noch nichts gelesen wurde. */
+export { chatGesehenBis }
 
 /** Zahl der ungelesenen Nachrichten; eigene zählen nicht mit. */
 export async function ungeleseneAnzahl(): Promise<number> {
-  const { data, error } = await supabase.rpc('chat_ungelesen')
-  if (error) throw error
-  return (data as number) ?? 0
+  return kurzWarten(zaehleUngelesen(), 0)
 }
 
 /**

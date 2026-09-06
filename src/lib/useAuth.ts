@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { supabase } from './supabase'
+import { abmelden } from './daten'
+import { aktuellerBenutzer, beobachte } from './demoBackend'
 
 export type AppUser = {
   id: string
@@ -11,41 +11,44 @@ export type AppUser = {
   is_active: boolean
 }
 
+/** In der Demo besteht die Sitzung nur aus der angemeldeten Person. */
+export type Sitzung = { user: AppUser }
+
+function leseSitzung(): Sitzung | null {
+  const user = aktuellerBenutzer()
+  if (!user) return null
+  return {
+    user: {
+      id: user.id,
+      full_name: user.full_name,
+      contact_email: user.contact_email,
+      phone: user.phone,
+      role: user.role,
+      is_active: user.is_active,
+    },
+  }
+}
+
 export function useAuth() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<AppUser | null>(null)
+  const [session, setSession] = useState<Sitzung | null>(leseSitzung)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next)
-      setLoading(false)
-    })
-    return () => sub.subscription.unsubscribe()
+    setSession(leseSitzung())
+    setLoading(false)
+    // Anmelden, Abmelden und geänderte Stammdaten schlagen hier durch
+    const ausSitzung = beobachte('sitzung', () => setSession(leseSitzung()))
+    const ausStammdaten = beobachte('stammdaten', () => setSession(leseSitzung()))
+    return () => {
+      ausSitzung()
+      ausStammdaten()
+    }
   }, [])
 
-  useEffect(() => {
-    if (!session) {
-      setProfile(null)
-      return
-    }
-    let cancelled = false
-    supabase
-      .from('app_users')
-      .select('id, full_name, contact_email, phone, role, is_active')
-      .eq('login_email', session.user.email?.toLowerCase() ?? '')
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setProfile((data as AppUser) ?? null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [session])
-
-  return { session, profile, loading, signOut: () => supabase.auth.signOut() }
+  return {
+    session,
+    profile: session?.user ?? null,
+    loading,
+    signOut: () => void abmelden(),
+  }
 }

@@ -1,23 +1,23 @@
 import { useState } from 'react'
 import {
+  anmelden,
   angemeldetBleiben,
   checkLoginName,
-  isSupabaseConfigured,
-  linkAuthAccount,
+  DEMO_HINWEIS,
+  passwortFestlegen,
   setzeAngemeldetBleiben,
-  supabase,
-} from '../lib/supabase'
+} from '../lib/daten'
 import { toGermanError } from '../lib/errors'
 import { PasswordField, validatePassword } from '../components/PasswordField'
 import { Logo, Moewe, RadelnLogo } from '../components/Marke'
 
-type Step = 'name' | 'password' | 'create-password' | 'confirm-mail'
+type Step = 'name' | 'password' | 'create-password'
 
 export function Login() {
   const [step, setStep] = useState<Step>('name')
   const [name, setName] = useState('')
   const [fullName, setFullName] = useState<string | null>(null)
-  // Technische Kennung fuer Supabase Auth - wird nie angezeigt.
+  // Technische Kennung der Anmeldung - wird nie angezeigt.
   const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [repeat, setRepeat] = useState('')
@@ -70,12 +70,7 @@ export function Login() {
       // Muss vor dem Anmelden feststehen: danach wird die Sitzung gespeichert
       setzeAngemeldetBleiben(bleiben)
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      })
-      if (signInError) throw signInError
-      await linkAuthAccount()
+      await anmelden(loginEmail, password)
     } catch (err) {
       setError(toGermanError(err))
     } finally {
@@ -97,18 +92,7 @@ export function Login() {
     try {
       setzeAngemeldetBleiben(bleiben)
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: loginEmail,
-        password,
-      })
-      if (signUpError) throw signUpError
-
-      if (data.session) {
-        await linkAuthAccount()
-      } else {
-        // Projekt verlangt eine E-Mail-Bestätigung
-        setStep('confirm-mail')
-      }
+      await passwortFestlegen(loginEmail, password)
     } catch (err) {
       setError(toGermanError(err))
     } finally {
@@ -129,12 +113,7 @@ export function Login() {
             <p className="auth__sub">Anmeldung für Fahrer:innen und Koordination</p>
           </header>
 
-        {!isSupabaseConfigured && (
-          <p className="alert alert--warn">
-            Supabase ist noch nicht konfiguriert. Bitte <code>.env</code> nach dem Vorbild von{' '}
-            <code>.env.example</code> anlegen.
-          </p>
-        )}
+        <p className="alert alert--warn">{DEMO_HINWEIS}</p>
 
         {step === 'name' && (
           <form onSubmit={handleNameSubmit} className="auth__form">
@@ -246,19 +225,6 @@ export function Login() {
               Zurück
             </button>
           </form>
-        )}
-
-        {step === 'confirm-mail' && (
-          <div className="auth__form">
-            <p className="alert alert--ok">
-              Dein Konto wurde angelegt. In den Supabase-Einstellungen ist die E-Mail-Bestätigung
-              noch aktiv – bitte lasse sie von der Koordination deaktivieren, danach kannst du dich
-              direkt anmelden.
-            </p>
-            <button type="button" className="btn" onClick={reset}>
-              Zur Anmeldung
-            </button>
-          </div>
         )}
 
           {error && <p className="alert alert--error">{error}</p>}

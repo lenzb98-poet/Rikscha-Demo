@@ -6,7 +6,7 @@ import {
   updateUser,
   type Stammdaten,
   type TeamMember,
-} from '../lib/supabase'
+} from '../lib/daten'
 import { toGermanError } from '../lib/errors'
 import { StammdatenFelder } from './StammdatenFelder'
 

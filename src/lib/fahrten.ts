@@ -1,5 +1,49 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabase'
+import {
+  bookSlot,
+  createRide,
+  deleteRide,
+  deleteUebernahme,
+  listPilots,
+  listRides,
+  listUebernahmen,
+  releaseSlot,
+  rideAddNote,
+  rideCancel,
+  rideSignoff,
+  rideSignup,
+  rikschaStatistik,
+  saveUebernahme,
+  setPilot,
+  slotReport,
+  updateRide,
+  watchRides,
+} from './demoFahrten'
+
+/**
+ * Die Datenzugriffe liegen in demoFahrten.ts und arbeiten auf den lokalen
+ * Beispieldaten - hier bleiben Typen, Regeln und Darstellung.
+ */
+export {
+  bookSlot,
+  createRide,
+  deleteRide,
+  deleteUebernahme,
+  listPilots,
+  listRides,
+  listUebernahmen,
+  releaseSlot,
+  rideAddNote,
+  rideCancel,
+  rideSignoff,
+  rideSignup,
+  rikschaStatistik,
+  saveUebernahme,
+  setPilot,
+  slotReport,
+  updateRide,
+  watchRides,
+}
 
 export type Zustand = 'offen' | 'besetzt' | 'nachtragen' | 'abgeschlossen' | 'abgesagt'
 export type RideStatus = 'geplant' | 'abgesagt' | 'abgeschlossen'
@@ -61,44 +105,16 @@ export const ZUSTAND_TEXT: Record<Zustand, string> = {
 }
 
 /** 'offen' = noch Plätze frei, 'alle' = Kalender, Verwaltung und Auswertung */
-export async function listRides(bereich: 'offen' | 'alle'): Promise<Fahrt[]> {
-  const { data, error } = await supabase.rpc('list_rides', { p_bereich: bereich })
-  if (error) throw error
-  return (data ?? []) as Fahrt[]
-}
 
 /** Bucht genau diesen Platz. */
-export async function bookSlot(slotId: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_slot_book', { p_slot_id: slotId })
-  if (error) throw error
-}
 
 /** Gibt genau diesen Platz wieder frei. */
-export async function releaseSlot(slotId: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_slot_release', { p_slot_id: slotId })
-  if (error) throw error
-}
 
 /** Nimmt den ersten freien Platz der Fahrt. */
-export async function rideSignup(rideId: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_signup', { p_ride_id: rideId })
-  if (error) throw error
-}
 
 /** Abmelden, wahlweise mit Mitteilung an die Koordination. */
-export async function rideSignoff(rideId: string, note?: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_signoff', {
-    p_ride_id: rideId,
-    p_note: note?.trim() || null,
-  })
-  if (error) throw error
-}
 
 /** Mitteilung zu einer Fahrt, ohne sich abzumelden. */
-export async function rideAddNote(rideId: string, note: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_add_note', { p_ride_id: rideId, p_note: note })
-  if (error) throw error
-}
 
 export type FahrtEingabe = {
   startsAt: string
@@ -108,82 +124,14 @@ export type FahrtEingabe = {
   status: RideStatus
 }
 
-export async function createRide(f: FahrtEingabe): Promise<string> {
-  const { data, error } = await supabase.rpc('admin_create_ride', {
-    p_starts_at: new Date(f.startsAt).toISOString(),
-    p_location: f.location,
-    p_info: f.info,
-    p_pilots_needed: f.pilotsNeeded,
-  })
-  if (error) throw error
-  return data as string
-}
 
-export async function updateRide(id: string, f: FahrtEingabe): Promise<void> {
-  const { error } = await supabase.rpc('admin_update_ride', {
-    p_id: id,
-    p_starts_at: new Date(f.startsAt).toISOString(),
-    p_location: f.location,
-    p_info: f.info,
-    p_pilots_needed: f.pilotsNeeded,
-    p_status: f.status,
-  })
-  if (error) throw error
-}
 
-export async function deleteRide(id: string): Promise<void> {
-  const { error } = await supabase.rpc('admin_delete_ride', { p_id: id })
-  if (error) throw error
-}
 
-export async function setPilot(rideId: string, pilotId: string, dabei: boolean): Promise<void> {
-  const { error } = await supabase.rpc('admin_set_pilot', {
-    p_ride_id: rideId,
-    p_pilot_id: pilotId,
-    p_dabei: dabei,
-  })
-  if (error) throw error
-}
 
-export async function listPilots(): Promise<Pilot[]> {
-  const { data, error } = await supabase.rpc('list_pilots')
-  if (error) throw error
-  return ((data ?? []) as { id: string; full_name: string }[]).map((p) => ({
-    id: p.id,
-    name: p.full_name,
-  }))
-}
 
-/**
- * Ruft `onChange` auf, sobald sich an den Fahrten etwas ändert.
- *
- * Jeder Aufruf bekommt einen eigenen Kanalnamen. Supabase gibt bei gleichem
- * Namen den bereits laufenden Kanal zurück und lehnt weitere Callbacks ab
- * ("cannot add postgres_changes callbacks ... after subscribe()"). Da die
- * Startseite und die Fahrtenansichten gleichzeitig zuhören, muss jede
- * Anmeldung für sich stehen.
- */
 /** Freie Plätze einer Fahrt. */
 export function freiePlaetze(f: Fahrt): Platz[] {
   return f.plaetze.filter((p) => p.pilot_id === null)
-}
-
-export function watchRides(onChange: () => void): () => void {
-  const kanal = supabase
-    .channel(`fahrten-${crypto.randomUUID()}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_slots' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_notes' }, onChange)
-    .subscribe()
-
-  const intervall = window.setInterval(() => {
-    if (document.visibilityState === 'visible') onChange()
-  }, 30000)
-
-  return () => {
-    supabase.removeChannel(kanal)
-    window.clearInterval(intervall)
-  }
 }
 
 /* --- Datum und Zeit ------------------------------------------------------ */
@@ -247,19 +195,6 @@ export function useFahrten() {
 /** Standardgrund, den die Absage-Auswahl vorschlägt. */
 export const GRUND_REGEN = 'Wegen Regen abgesagt'
 
-/**
- * Sagt die ganze Fahrt ab – für alle Eingetragenen. Erlaubt für eingetragene
- * Pilot:innen und die Koordination; der Grund ist Pflicht und wird als
- * Mitteilung an der Fahrt festgehalten.
- */
-export async function rideCancel(rideId: string, grund: string): Promise<void> {
-  const { error } = await supabase.rpc('ride_cancel', {
-    p_ride_id: rideId,
-    p_grund: grund.trim(),
-  })
-  if (error) throw error
-}
-
 export type Bericht = {
   km: string
   /** Eingabe in Stunden, etwa "2,5" – gespeichert wird in Minuten. */
@@ -267,37 +202,6 @@ export type Bericht = {
   personen: string
   rikscha: RikschaName | ''
   bemerkung: string
-}
-
-/**
- * Trägt nach der Fahrt Kilometer, Dauer und Fahrgäste nach. Erst damit gilt
- * die Fahrt als abgeschlossen. Erlaubt für eingetragene Pilot:innen und die
- * Koordination.
- */
-/** Trägt die Angaben für einen einzelnen Rikscha-Platz nach. */
-export async function slotReport(slotId: string, b: Bericht): Promise<void> {
-  // Leere Felder bleiben leer statt zu 0 zu werden – die Datenbank lässt
-  // sie dann unangetastet, sodass sich Angaben ergänzen lassen.
-  const zahl = (wert: string) => {
-    const t = wert.trim().replace(',', '.')
-    return t === '' ? null : Number(t)
-  }
-
-  // Erfasst wird in Stunden, gespeichert in Minuten – so bleiben die
-  // Auswertungen und die vorhandenen Daten unverändert.
-  const stunden = zahl(b.stunden)
-
-  const bemerkung = b.bemerkung.trim()
-
-  const { error } = await supabase.rpc('ride_slot_report', {
-    p_slot_id: slotId,
-    p_km: zahl(b.km),
-    p_minutes: stunden === null ? null : Math.round(stunden * 60),
-    p_passengers: zahl(b.personen),
-    p_rikscha: b.rikscha || null,
-    p_bemerkung: bemerkung === '' ? null : bemerkung,
-  })
-  if (error) throw error
 }
 
 /** Minuten als Stundenwert für die Eingabe: 150 → "2,5" */
@@ -315,11 +219,6 @@ export type RikschaStatistik = {
 }
 
 /** Summen je Rikscha über alle nachgetragenen Plätze. */
-export async function rikschaStatistik(): Promise<RikschaStatistik[]> {
-  const { data, error } = await supabase.rpc('rikscha_statistik')
-  if (error) throw error
-  return (data ?? []) as RikschaStatistik[]
-}
 
 /** Sind alle Angaben zu diesem Platz vorhanden? */
 export function platzVollstaendig(p: Platz): boolean {
@@ -461,11 +360,6 @@ export type Uebernahme = {
   erfasst_am: string
 }
 
-export async function listUebernahmen(): Promise<Uebernahme[]> {
-  const { data, error } = await supabase.rpc('list_uebernahmen')
-  if (error) throw error
-  return (data ?? []) as Uebernahme[]
-}
 
 export type UebernahmeEingabe = {
   bezeichnung: string
@@ -475,26 +369,7 @@ export type UebernahmeEingabe = {
   personen: string
 }
 
-export async function saveUebernahme(id: string | null, e: UebernahmeEingabe): Promise<void> {
-  const zahl = (w: string) => {
-    const t = w.trim().replace(',', '.')
-    return t === '' ? 0 : Number(t)
-  }
-  const { error } = await supabase.rpc('admin_save_uebernahme', {
-    p_id: id,
-    p_bezeichnung: e.bezeichnung.trim(),
-    p_km: zahl(e.km),
-    // Auch hier wird in Stunden erfasst und in Minuten gespeichert
-    p_minuten: Math.round(zahl(e.stunden) * 60),
-    p_personen: zahl(e.personen),
-  })
-  if (error) throw error
-}
 
-export async function deleteUebernahme(id: string): Promise<void> {
-  const { error } = await supabase.rpc('admin_delete_uebernahme', { p_id: id })
-  if (error) throw error
-}
 
 /** Summe aus Fahrten und übernommener Statistik. */
 export function werteAusGesamt(fahrten: Fahrt[], uebernahmen: Uebernahme[]): Auswertung {
