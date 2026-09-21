@@ -23,14 +23,9 @@ Mehr ist nicht nötig: Es gibt keine Umgebungsvariablen, keine Zugangsdaten und
 keine Migrationen. Die App lässt sich auch ohne Internetverbindung starten und
 bedienen.
 
-Zum Ausprobieren sind Zugänge hinterlegt, alle mit dem Passwort `demo1234`:
-
-| Name | Rolle |
-|---|---|
-| Lenz Becker | Administration |
-| Martina Vogel | Koordination |
-| Bernd Kramer, Anke Meier | Fahrer:in |
-| Hilde Bergmann | Fahrer:in, noch ohne Passwort (Erstanmeldung) |
+Eine Anmeldung gibt es nicht: Auf der Startseite führt ein Knopf **„Anmelden"**
+direkt in die App. Angemeldet wird als Administration, damit beim Ansehen alle
+Bereiche offenstehen.
 
 ## Veröffentlichen
 
@@ -48,26 +43,21 @@ der Seite die `index.html` mit dem unkompilierten Quelltext.
 
 ## Anmeldung
 
-Angemeldet wird sich mit dem **vollen Namen**, nicht mit einer E-Mail-Adresse.
+In der Demo entfällt sie: ein Knopf, kein Name, kein Passwort (`demoAnmelden()`
+in `src/lib/daten.ts`). Wer angemeldet ist, merkt sich der Browser, ein erneuter
+Besuch führt also direkt in die App; **Abmelden** oben rechts führt zurück auf
+den Knopf.
 
-1. Name eingeben – die App sucht ihn in der Benutzerliste (`checkLoginName`).
-2. **Erste Anmeldung:** Die Person legt selbst ein Passwort fest.
-3. **Weitere Anmeldungen:** normale Passwort-Anmeldung.
+Die Vollversion meldet mit dem **vollen Namen** an. Davon ist in den
+Beispieldaten geblieben, was die Oberfläche zeigt:
 
-Die Anmeldung kennt zu jeder Person drei Felder:
-
-- `full_name` – der Anmeldename, eindeutig (Groß-/Kleinschreibung egal)
+- `full_name` – der Name, eindeutig
 - `login_email` – technische Kennung, nie angezeigt, aus dem Namen abgeleitet
-  (`Lenz Becker` → `lenz.becker@rikscha-melle.de`)
 - `contact_email` – die echte Adresse, optional, nur zur Kontaktaufnahme
 
-Weil Namen der Login sind, müssen sie eindeutig sein. Eine Namensänderung ändert
-den Anmeldenamen, **nicht** die `login_email` – ein gesetztes Passwort bleibt
-gültig.
-
-**Angemeldet bleiben** (Vorgabe: an) entscheidet, wo die Sitzung liegt: dauerhaft
-im Browser oder nur für die laufende Browsersitzung. Die letzte Wahl ist beim
-nächsten Mal vorausgewählt.
+Auch der Passwortstand bleibt sichtbar: In der Pilot/-innen Liste steht bei
+Hilde Bergmann „Kein Passwort", und **Passwort zurücksetzen** funktioniert wie
+gehabt. Für die Anmeldung spielt beides in der Demo keine Rolle mehr.
 
 ## Pilot/-innen Liste
 

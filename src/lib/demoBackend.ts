@@ -128,28 +128,11 @@ export function fehler(text: string): Error {
 
 /* --- Anmeldung ----------------------------------------------------------- */
 
-const MERKEN = 'rikscha.angemeldet-bleiben'
-
-export function angemeldetBleiben(): boolean {
-  try {
-    // Vorgabe: angemeldet bleiben
-    return localStorage.getItem(MERKEN) !== '0'
-  } catch {
-    return true
-  }
-}
-
-export function setzeAngemeldetBleiben(wert: boolean): void {
-  try {
-    localStorage.setItem(MERKEN, wert ? '1' : '0')
-  } catch {
-    // Privater Modus ohne Speicher: dann gilt die Vorgabe
-  }
-}
-
 /**
- * Die Anmeldung liegt entweder dauerhaft im Browser (localStorage) oder nur
- * für die laufende Sitzung (sessionStorage) – wie in der Vollversion.
+ * Die Anmeldung liegt dauerhaft im Browser. In der Demo kommt man mit einem
+ * Knopf hinein, die Wahl „angemeldet bleiben" hat damit keinen Sinn mehr.
+ * Gelesen wird weiterhin auch aus der Sitzung, damit ein früherer Stand nicht
+ * plötzlich abmeldet.
  */
 function leseSitzung(): string | null {
   return (
@@ -163,12 +146,9 @@ function schreibeSitzung(userId: string | null): void {
     if (userId === null) {
       localStorage.removeItem(SITZUNG_SCHLUESSEL)
       sessionStorage.removeItem(SITZUNG_SCHLUESSEL)
-    } else if (angemeldetBleiben()) {
+    } else {
       localStorage.setItem(SITZUNG_SCHLUESSEL, JSON.stringify(userId))
       sessionStorage.removeItem(SITZUNG_SCHLUESSEL)
-    } else {
-      sessionStorage.setItem(SITZUNG_SCHLUESSEL, JSON.stringify(userId))
-      localStorage.removeItem(SITZUNG_SCHLUESSEL)
     }
   } catch {
     // Kein Speicher: die Anmeldung gilt nur für diese Seite

@@ -8,7 +8,6 @@
 import {
   aendere,
   aktuellerBenutzer,
-  angemeldetBleiben,
   beobachte,
   benutzerName,
   darfVerwalten,
@@ -20,13 +19,9 @@ import {
   melde_ab,
   melde_an,
   neueId,
-  setzeAngemeldetBleiben,
 } from './demoBackend'
-import { DEMO_PASSWORT, type DemoMessage, type DemoUser } from './demoDaten'
+import type { DemoMessage, DemoUser } from './demoDaten'
 
-export { DEMO_PASSWORT }
-
-export { angemeldetBleiben, setzeAngemeldetBleiben }
 export { setzeDemoZurueck } from './demoBackend'
 
 /** In dieser Fassung liegen alle Daten im Browser. */
@@ -34,70 +29,21 @@ export const IST_DEMO = true
 
 /** Hinweis auf der Anmeldeseite, damit klar ist, womit man es zu tun hat. */
 export const DEMO_HINWEIS =
-  `Demo-Version ohne Server: Alle Daten sind Beispieldaten im Browser. ` +
-  `Zum Ausprobieren z. B. „Lenz Becker“ mit dem Passwort „${DEMO_PASSWORT}“.`
+  'Demo-Version ohne Server: Alle Daten sind Beispieldaten im Browser. ' +
+  'Änderungen bleiben auf diesem Gerät und betreffen niemanden sonst.'
 
 /* --- Anmeldung ----------------------------------------------------------- */
 
-export type LoginCheck = {
-  found: boolean
-  is_active: boolean
-  has_account: boolean
-  full_name: string | null
-  /** Technische Kennung der Anmeldung – nur intern, nie angezeigt. */
-  login_email: string | null
-}
-
-const LEERER_CHECK: LoginCheck = {
-  found: false,
-  is_active: false,
-  has_account: false,
-  full_name: null,
-  login_email: null,
-}
-
-/** Prüft, ob der Name in der Benutzerliste hinterlegt ist. */
-export async function checkLoginName(fullName: string): Promise<LoginCheck> {
-  const gesucht = fullName.trim().toLowerCase()
-  const user = daten().users.find((u) => u.full_name.toLowerCase() === gesucht)
-  if (!user) return kurzWarten(LEERER_CHECK)
-  return kurzWarten({
-    found: true,
-    is_active: user.is_active,
-    has_account: user.passwort !== null,
-    full_name: user.full_name,
-    login_email: user.login_email,
-  })
-}
-
-function sucheNachKennung(loginEmail: string): DemoUser {
-  const user = daten().users.find(
-    (u) => u.login_email.toLowerCase() === loginEmail.trim().toLowerCase(),
-  )
-  if (!user) throw fehler('Invalid login credentials')
-  return user
-}
-
-/** Anmeldung mit vorhandenem Passwort. */
-export async function anmelden(loginEmail: string, passwort: string): Promise<void> {
-  const user = sucheNachKennung(loginEmail)
-  if (user.passwort === null || user.passwort !== passwort) {
-    throw fehler('Invalid login credentials')
-  }
-  if (!user.is_active) {
-    throw fehler('Dieser Zugang ist deaktiviert. Bitte wende dich an die Koordination.')
-  }
-  await kurzWarten(null)
-  melde_an(user.id)
-}
-
-/** Erstanmeldung: eigenes Passwort festlegen und anmelden. */
-export async function passwortFestlegen(loginEmail: string, passwort: string): Promise<void> {
-  const user = sucheNachKennung(loginEmail)
-  if (user.passwort !== null) throw fehler('User already registered')
-  if (passwort.length < 8) throw fehler('Password should be at least 8 characters')
-  user.passwort = passwort
-  aendere('stammdaten')
+/**
+ * Meldet in der Demo ohne Eingabe an – ein Knopf genügt.
+ *
+ * Genommen wird die Administration, damit beim Ansehen alle Bereiche
+ * offenstehen; sonst die erste freigeschaltete Person.
+ */
+export async function demoAnmelden(): Promise<void> {
+  const frei = daten().users.filter((u) => u.is_active)
+  const user = frei.find((u) => u.role === 'admin') ?? frei[0]
+  if (!user) throw fehler('In den Beispieldaten ist niemand freigeschaltet.')
   await kurzWarten(null)
   melde_an(user.id)
 }
