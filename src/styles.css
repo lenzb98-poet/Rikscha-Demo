@@ -431,7 +431,10 @@ body {
 
 /* --- Reaktionen --------------------------------------------------------- */
 /* Gesetzte Reaktionen unter der Nachricht */
-.reaktionen { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.reaktionen { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; align-items: flex-start; }
+
+/* Zeichen und Namen nebeneinander, die Namen brechen bei Bedarf um */
+.reaktion-zeile { display: flex; align-items: baseline; gap: 6px; max-width: 100%; }
 
 .reaktion {
   display: inline-flex;
@@ -449,12 +452,12 @@ body {
 /* Die eigene hervorheben, damit man sieht, wo man selbst mitgezählt wird */
 .reaktion--meine { border-color: var(--blau); background: var(--z-offen-bg); font-weight: 700; }
 
-/* Wer mit diesem Zeichen reagiert hat - erscheint auf einen Tipp auf die Pille */
+/* Wer mit diesem Zeichen reagiert hat - steht immer neben der Pille */
 .reaktion-namen {
-  margin: 4px 0 0;
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
+  min-width: 0;
 }
 
 /* Auswahlleiste, erscheint auf "Reagieren" */

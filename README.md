@@ -265,6 +265,9 @@ Knopf **Piloten Chat** unter den Fahrten-Knöpfen.
 - Eigene Nachrichten löschbar, Administratoren auch fremde
 - Deaktivierte Zugänge können weder lesen noch schreiben
 
+Neben jedem Zeichen stehen die Namen derer, die damit reagiert haben – immer
+sichtbar, nicht erst beim Hovern: Auf dem Handy gibt es kein Hovern.
+
 Die Auswahl der Zeichen ist bewusst klein und fest (`REAKTIONEN` im Programm):
 auf jedem Gerät gleich, ohne Fremdbibliothek, mit einem Griff bedienbar.
 `reagiere()` schaltet um –
