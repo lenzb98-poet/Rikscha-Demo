@@ -449,6 +449,14 @@ body {
 /* Die eigene hervorheben, damit man sieht, wo man selbst mitgezählt wird */
 .reaktion--meine { border-color: var(--blau); background: var(--z-offen-bg); font-weight: 700; }
 
+/* Wer mit diesem Zeichen reagiert hat - erscheint auf einen Tipp auf die Pille */
+.reaktion-namen {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 /* Auswahlleiste, erscheint auf "Reagieren" */
 .reaktionswahl {
   display: flex;

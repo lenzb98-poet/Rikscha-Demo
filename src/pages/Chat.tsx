@@ -48,6 +48,8 @@ export function Chat({ onZurueck, darfVerwalten }: Props) {
   const [antwortAuf, setAntwortAuf] = useState<ChatNachricht | null>(null)
   /** Nachricht, für die gerade die Zeichenauswahl offen steht. */
   const [reaktionFuer, setReaktionFuer] = useState<string | null>(null)
+  /** Aufgeklappte Reaktion: zeigt, wer mit diesem Zeichen reagiert hat. */
+  const [namenFuer, setNamenFuer] = useState<{ nachricht: string; emoji: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const dateiRef = useRef<HTMLInputElement>(null)
@@ -193,6 +195,7 @@ export function Chat({ onZurueck, darfVerwalten }: Props) {
 
   async function handleReaktion(id: string, emoji: string) {
     setReaktionFuer(null)
+    setNamenFuer(null)
     try {
       await reagiere(id, emoji)
       laden()
@@ -307,17 +310,33 @@ export function Chat({ onZurueck, darfVerwalten }: Props) {
 
                   {n.reaktionen.length > 0 && (
                     <div className="reaktionen">
-                      {n.reaktionen.map((r) => (
-                        <button
-                          key={r.emoji}
-                          className={r.ist_meine ? 'reaktion reaktion--meine' : 'reaktion'}
-                          onClick={() => handleReaktion(n.id, r.emoji)}
-                          title={r.namen}
-                        >
-                          <span aria-hidden="true">{r.emoji}</span> {r.anzahl}
-                        </button>
-                      ))}
+                      {n.reaktionen.map((r) => {
+                        const offen =
+                          namenFuer?.nachricht === n.id && namenFuer.emoji === r.emoji
+                        return (
+                          <button
+                            key={r.emoji}
+                            className={r.ist_meine ? 'reaktion reaktion--meine' : 'reaktion'}
+                            onClick={() =>
+                              setNamenFuer(
+                                offen ? null : { nachricht: n.id, emoji: r.emoji },
+                              )
+                            }
+                            aria-expanded={offen}
+                            title={`Wer hat mit ${r.emoji} reagiert?`}
+                          >
+                            <span aria-hidden="true">{r.emoji}</span> {r.anzahl}
+                          </button>
+                        )
+                      })}
                     </div>
+                  )}
+
+                  {namenFuer?.nachricht === n.id && (
+                    <p className="reaktion-namen">
+                      <span aria-hidden="true">{namenFuer.emoji}</span>{' '}
+                      {n.reaktionen.find((r) => r.emoji === namenFuer.emoji)?.namen}
+                    </p>
                   )}
 
                   {reaktionFuer === n.id && (
